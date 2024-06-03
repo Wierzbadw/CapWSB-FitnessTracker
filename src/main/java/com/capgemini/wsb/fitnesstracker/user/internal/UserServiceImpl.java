@@ -17,6 +17,7 @@ class UserServiceImpl implements UserService, UserProvider {
 
     private final UserRepository userRepository;
 
+
     @Override
     public User createUser(final User user) {
         log.info("Creating User {}", user);
@@ -24,6 +25,16 @@ class UserServiceImpl implements UserService, UserProvider {
             throw new IllegalArgumentException("User has already DB ID, update is not permitted!");
         }
         return userRepository.save(user);
+    }
+
+    @Override
+    public Optional deleteUser(long id) {
+        log.info("Deleting User with ID {}", id);
+        if (userRepository.existsById(id)) {
+            userRepository.deleteById(id);
+            return Optional.of(id);
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -36,9 +47,28 @@ class UserServiceImpl implements UserService, UserProvider {
         return userRepository.findByEmail(email);
     }
 
+    public List<User> getUsersWithEmail(String email) {
+        return userRepository.findAll().stream()
+                .filter(user -> user.getEmail().contains(email))
+                .toList();
+    }
+
     @Override
     public List<User> findAllUsers() {
         return userRepository.findAll();
     }
 
+
+    public List<User> bornAfter(String date) {
+        return userRepository.bornAfter(date);
+    }
+
+    public UserDto updateUser(Long userId, UserDto userDto) {
+        User user = userRepository.findById(userId).orElseThrow();
+        user.setFirstName(userDto.firstName());
+        user.setLastName(userDto.lastName());
+        user.setBirthdate(userDto.birthdate());
+        user.setEmail(userDto.email());
+        return new UserDto(user.getId(), user.getFirstName(), user.getLastName(), user.getBirthdate(), user.getEmail());
+    }
 }
